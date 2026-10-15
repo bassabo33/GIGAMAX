@@ -1,7 +1,6 @@
 import itertools
 import math
 from collections import Counter
-
 import streamlit as st
 
 
@@ -15,6 +14,17 @@ OPERATIONS = [300, 120, -400, -250]
 
 
 # ============================================================
+#                     Streamlit 頁面設定
+# ============================================================
+
+st.set_page_config(
+    page_title="GIGAMAX 最少步數組合計算器",
+    page_icon="🔢",
+    layout="wide"
+)
+
+
+# ============================================================
 #                     搜尋最少步數組合
 # ============================================================
 
@@ -24,10 +34,7 @@ def find_min_steps_combinations(start, target, max_steps=20):
 
         found = []
 
-        for ops in itertools.product(
-            OPERATIONS,
-            repeat=steps
-        ):
+        for ops in itertools.product(OPERATIONS, repeat=steps):
 
             if start + sum(ops) == target:
                 found.append(ops)
@@ -42,7 +49,7 @@ def find_min_steps_combinations(start, target, max_steps=20):
 #                     壓縮組合
 # ============================================================
 
-def compress_combinations(combos):
+def compress_combinations(combos, enable_limit=True):
 
     unique = {}
 
@@ -54,15 +61,20 @@ def compress_combinations(combos):
             count[op] = count.get(op, 0)
 
         # ----------------------------------------------------
-        # 限制條件：
+        # 限制條件
         #
         # (-400 數量) + (-250 數量)
         # <=
         # (+120 數量)
+        #
+        # enable_limit = True  → 啟用限制
+        # enable_limit = False → 不啟用限制
         # ----------------------------------------------------
 
-        if count[-400] + count[-250] > count[120]:
-            continue
+        if enable_limit:
+
+            if count[-400] + count[-250] > count[120]:
+                continue
 
         key = tuple(
             count[op]
@@ -85,13 +97,12 @@ def count_permutations(count):
         for op in OPERATIONS
     )
 
-    # --------------------------------------------------------
     # 多重集合排列數：
     #
     # n!
     # -------------------------
     # a! × b! × c! × d!
-    # --------------------------------------------------------
+    #
 
     result = math.factorial(total_steps)
 
@@ -111,7 +122,8 @@ def count_permutations(count):
 def calculate_target(
     start_val,
     target,
-    max_steps
+    max_steps,
+    enable_limit
 ):
 
     # --------------------------------------------------------
@@ -132,7 +144,8 @@ def calculate_target(
     # --------------------------------------------------------
 
     compressed = compress_combinations(
-        combos
+        combos,
+        enable_limit
     )
 
     if not compressed:
@@ -171,8 +184,7 @@ def calculate_target(
             count,
             permutation_count
         )
-        for count, permutation_count
-        in perm_counts
+        for count, permutation_count in perm_counts
         if permutation_count == max_perm
     ]
 
@@ -180,45 +192,13 @@ def calculate_target(
 
 
 # ============================================================
-#                     Streamlit 設定
+#                     Streamlit UI
 # ============================================================
 
-st.set_page_config(
-    page_title="GIGAMAX",
-    page_icon="🔢",
-    layout="wide"
-)
+st.title("🔢 GIGAMAX 最少步數組合計算器")
 
-
-# ============================================================
-#                     標題
-# ============================================================
-
-st.title(
-    "GIGAMAX 最少步數組合計算器"
-)
-
-st.write(
-    "尋找從起始值 X 到指定目標值的最少步數組合。"
-)
-
-
-# ============================================================
-#                     基本資訊
-# ============================================================
-
-st.info(
-    "目標值：1190 / 1180 / 1170 / 1160"
-)
-
-st.write(
-    "操作："
-    "`+300`、`+120`、`-400`、`-250`"
-)
-
-st.write(
-    "限制："
-    "`(-400 數量 + -250 數量) <= (+120 數量)`"
+st.markdown(
+    "計算從起始值 X 到指定目標值所需的最少操作步數。"
 )
 
 
@@ -226,7 +206,7 @@ st.write(
 #                     輸入區
 # ============================================================
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 
 with col1:
@@ -249,69 +229,83 @@ with col2:
     )
 
 
+with col3:
+
+    enable_limit = st.checkbox(
+        "啟用限制條件",
+        value=True
+    )
+
+
+# ============================================================
+#                     顯示目前設定
+# ============================================================
+
+st.divider()
+
+st.write("### ⚙️ 目前設定")
+
+st.write(
+    f"**起始值 X：** {start_val}"
+)
+
+st.write(
+    f"**操作：** {OPERATIONS}"
+)
+
+st.write(
+    f"**最大搜尋步數：** {max_steps}"
+)
+
+
+if enable_limit:
+
+    st.success(
+        "已啟用限制：(-400 數量 + -250 數量) <= (+120 數量)"
+    )
+
+else:
+
+    st.warning(
+        "未啟用限制：不檢查 (-400 數量 + -250 數量) <= (+120 數量)"
+    )
+
+
 # ============================================================
 #                     計算按鈕
 # ============================================================
 
-calculate_button = st.button(
-    "開始計算",
+if st.button(
+    "🚀 開始計算",
     type="primary",
     use_container_width=True
-)
-
-
-# ============================================================
-#                     開始計算
-# ============================================================
-
-if calculate_button:
-
-    start_val = int(start_val)
-    max_steps = int(max_steps)
+):
 
     st.divider()
 
     st.subheader(
-        "計算條件"
+        "📊 GIGAMAX 最少步數組合計算結果"
     )
 
-    st.write(
-        f"起始值 X：**{start_val}**"
-    )
-
-    st.write(
-        f"最大搜尋步數：**{max_steps}**"
-    )
-
-    st.write(
-        "限制："
-        "**(-400 數量 + -250 數量) <= (+120 數量)**"
-    )
-
-    st.divider()
-
-    # ========================================================
-    #                   逐一計算目標值
-    # ========================================================
+    # --------------------------------------------------------
+    # 逐一計算目標值
+    # --------------------------------------------------------
 
     for target in TARGETS:
 
-        st.header(
-            f"目標值：{target}"
+        st.markdown(
+            f"## 🎯 目標值：{target}"
         )
 
-        with st.spinner(
-            f"正在計算目標值 {target}..."
-        ):
-
-            result = calculate_target(
-                start_val,
-                target,
-                max_steps
-            )
+        result = calculate_target(
+            start_val,
+            target,
+            max_steps,
+            enable_limit
+        )
 
         # ----------------------------------------------------
-        # 沒有符合條件
+        # 沒有符合條件的組合
         # ----------------------------------------------------
 
         if not result:
@@ -325,83 +319,50 @@ if calculate_button:
         # ----------------------------------------------------
         # 顯示結果
         #
-        # 目前按照你的原程式：
-        # 如果有多筆相同排列數，
-        # 只顯示第一筆。
+        # 目前維持原本程式邏輯：
+        # 如果有多筆相同排列數，只顯示第一筆
         # ----------------------------------------------------
 
         st.success(
-            "找到符合條件的組合。"
+            "符合條件：1 筆"
         )
 
         count = result[0][0]
-
-        permutation_count = result[0][1]
 
         steps = sum(
             count[op]
             for op in OPERATIONS
         )
 
-        # ----------------------------------------------------
-        # 組合內容
-        # ----------------------------------------------------
-
-        combination_text = ", ".join(
+        line = ", ".join(
             [
-                f"{'+' if op > 0 else ''}"
-                f"{op} x {count[op]}"
+                f"{'+' if op > 0 else ''}{op} × {count[op]}"
                 for op in OPERATIONS
             ]
         )
 
         st.write(
-            f"**組合 1：** "
-            f"{combination_text}"
+            f"**組合 1：** {line}"
         )
 
         st.write(
-            f"步數：**{steps}**"
+            f"**步數：** {steps}"
         )
 
         st.write(
-            f"排列數：**{permutation_count:,}**"
+            f"**排列數：** {result[0][1]:,}"
         )
 
         # ----------------------------------------------------
-        # 顯示完整結果資訊
+        # 顯示詳細數量
         # ----------------------------------------------------
 
-        with st.expander(
-            "查看詳細資料"
-        ):
-
-            st.write(
-                f"目標值：{target}"
-            )
-
-            st.write(
-                f"起始值：{start_val}"
-            )
-
-            st.write(
-                f"步數：{steps}"
-            )
-
-            st.write(
-                f"排列總數："
-                f"{permutation_count:,}"
-            )
-
-            st.write(
-                "各操作數量："
-            )
+        with st.expander("查看詳細組合"):
 
             for op in OPERATIONS:
 
                 st.write(
-                    f"{'+' if op > 0 else ''}"
-                    f"{op}："
+                    f"{'+' if op > 0 else ''}{op}："
                     f"{count[op]} 次"
                 )
 
@@ -409,9 +370,35 @@ if calculate_button:
 
 
 # ============================================================
-#                     Footer
+#                     頁面底部說明
 # ============================================================
 
-st.caption(
-    "GIGAMAX"
-)
+with st.expander("📖 使用說明"):
+
+    st.markdown(
+        """
+### 操作
+
+- `+300`
+- `+120`
+- `-400`
+- `-250`
+
+### 限制條件
+
+啟用時：
+
+`(-400 次數 + -250 次數) <= (+120 次數)`
+
+例如：
+
+| +300 | +120 | -400 | -250 | 是否符合 |
+|---:|---:|---:|---:|:---:|
+| 2 | 3 | 1 | 1 | ✅ |
+| 2 | 2 | 1 | 1 | ❌ |
+| 1 | 5 | 2 | 1 | ✅ |
+| 3 | 1 | 1 | 1 | ❌ |
+
+停用限制後，以上所有組合都可以進一步進行排列數比較。
+"""
+    )
